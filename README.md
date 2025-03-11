@@ -31,9 +31,7 @@ make test
 ```
 
 
-## Docs
-
-### Auto-generated specs
+# Auto-generated specs
 
 <!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
 ## Requirements
