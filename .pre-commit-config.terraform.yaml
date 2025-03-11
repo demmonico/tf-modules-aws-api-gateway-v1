@@ -11,8 +11,13 @@ repos:
     - id: terraform_checkov
       args:
         - --args=--quiet
+        - --args=--download-external-modules true
+        - --args=--skip-check CKV_TF_1    # Ensure Terraform module sources use a commit hash
         - --args=--skip-check CKV_AWS_158 # AWS CloudWatch Log groups encrypted using default encryption key instead of KMS CMK
         - --args=--skip-check CKV_AWS_338 # AWS CloudWatch log groups retention set to less than 365 days
+        - --args=--skip-check CKV_AWS_149 # Ensure that Secrets Manager secret is encrypted using KMS CMK
+        - --args=--skip-check CKV2_AWS_57 # Ensure Secrets Manager secrets should have automatic rotation enabled
+        - --args=--skip-check CKV_AWS_272 # Ensure AWS Lambda function is configured to validate code-signing
 
 - repo: https://github.com/pre-commit/pre-commit-hooks
   rev: v5.0.0

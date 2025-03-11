@@ -9,3 +9,5 @@
 .terraform
 .terraform.lock.hcl
 *.tfstate
+# Auto-created folder for checkov pre-commit hook testing tool
+.external_modules

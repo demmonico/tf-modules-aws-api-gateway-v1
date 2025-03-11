@@ -43,3 +43,11 @@ init: ## Setup project
 
 test: ## Test project
 	pre-commit run --all-files
+
+
+tf-init: cmd=init
+tf-init: ## Init terraform
+	docker run --rm -ti $(LOCAL_PLATFORM_FLAG) \
+		-v $(PWD)/:/opt -w=/opt \
+		hashicorp/terraform:latest \
+		$(cmd)
