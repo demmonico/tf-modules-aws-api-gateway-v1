@@ -8,7 +8,36 @@ Bootstraps a new Terraform module repo.
 
 ## Usage
 
-TODO add examples here
+```terraform
+#...
+
+module "apig" {
+  source = "https://github.com/demmonico/tf-modules-aws-api-gateway-v1.git"
+
+  api_name   = local.lambda_name
+  stage_name = local.env
+
+  paths = [{
+    path            = "/search/{id}"
+    integration_uri = module.lambda.lambda_invoke_arn
+  }]
+
+  create_lambda_permissions    = true
+  lambda_permission_names_list = [local.lambda_name]
+
+  create_whitelist_api_resource_policy = true
+  whitelist_ip_cidrs = [
+    for p in data.aws_ec2_managed_prefix_list.internal_ips.entries : p.cidr
+  ]
+
+  create_custom_domain   = true
+  custom_domain          = "${local.apig_subdomain}.${local.apig_root_domain}"
+  custom_domain_cert_arn = data.aws_acm_certificate.this.arn
+  custom_domain_zone_id  = data.aws_route53_zone.this.zone_id
+}
+
+#...
+```
 
 ## Development
 
