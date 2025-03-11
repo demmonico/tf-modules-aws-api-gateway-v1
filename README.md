@@ -1,6 +1,6 @@
-[![License](https://img.shields.io/github/license/demmonico/terraform-app-template)](LICENSE)
-[![Tests](https://github.com/demmonico/terraform-app-template/actions/workflows/tests.yml/badge.svg)](https://github.com/demmonico/terraform-app-template/actions/workflows/tests.yml)
-![GitHub Tag](https://img.shields.io/github/v/tag/demmonico/terraform-app-template)
+[![License](https://img.shields.io/github/license/demmonico/terraform-modules-template)](LICENSE)
+[![Tests](https://github.com/demmonico/terraform-modules-template/actions/workflows/tests.yml/badge.svg)](https://github.com/demmonico/terraform-modules-template/actions/workflows/tests.yml)
+![GitHub Tag](https://img.shields.io/github/v/tag/demmonico/terraform-modules-template)
 
 # Terraform Modules Template
 
@@ -35,10 +35,10 @@ Steps:
     
     # or do it manually
     NEW_REPO_NAME=REPLACE_WITH_YOUR_REPO_NAME_WITHOUT_GIT_EXTENSION && \
-    git clone git@github.com:demmonico/terraform-app-template.git $NEW_REPO_NAME && \
+    git clone git@github.com:demmonico/terraform-modules-template.git $NEW_REPO_NAME && \
     cd $NEW_REPO_NAME && \
     git remote set-url origin git@github.com:demmonico/$NEW_REPO_NAME.git && \
-    git remote add upstream git@github.com:demmonico/terraform-app-template.git && \
+    git remote add upstream git@github.com:demmonico/terraform-modules-template.git && \
     git push -u origin master && git push --all
     
     # so later you can be synced with the original repo
