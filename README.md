@@ -12,7 +12,7 @@ Bootstraps a new Terraform module repo.
 #...
 
 module "apig" {
-  source = "https://github.com/demmonico/tf-modules-aws-api-gateway-v1.git"
+  source = "git::https://github.com/demmonico/tf-modules-aws-api-gateway-v1.git"
 
   api_name   = local.lambda_name
   stage_name = local.env
