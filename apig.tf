@@ -1,12 +1,3 @@
-locals {
-  api_path_map = tomap({
-    for op in var.paths : op.path => op
-  })
-  gateway_responses_map = tomap({
-    for or in var.gateway_responses : or.key => or
-  })
-}
-
 #-------------------------------------#
 # API Gateway
 
@@ -17,7 +8,7 @@ resource "aws_api_gateway_rest_api" "this" {
     types = [var.api_endpoint_type]
   }
 
-  body = jsonencode({
+  body = var.openapi_json != null ? var.openapi_json : jsonencode({
     openapi = "3.0.1"
     info = {
       title   = var.api_name
@@ -25,25 +16,28 @@ resource "aws_api_gateway_rest_api" "this" {
     }
 
     paths = {
-      for path, op in local.api_path_map : path => {
-        lower(coalesce(op.http_method, "get")) = {
-          x-amazon-apigateway-integration = {
-            uri                  = op.integration_uri
-            type                 = upper(coalesce(op.integration_type, "AWS_PROXY"))
-            httpMethod           = upper(coalesce(op.integration_method, "POST"))
-            payloadFormatVersion = upper(coalesce(op.payload_version, "2.0"))
-          }
+      for path, methods in var.integrations : path => {
+        for httpMethod, params in methods : lower(httpMethod) => {
+          responses = { for k, v in(can(params["responses"]) ? params["responses"] : {}) : v["statusCode"] => {
+            content     = v["methodResponseContent"]
+            description = k
+          } if v["methodResponseContent"] != null }
+          x-amazon-apigateway-integration = { for k, v in params : k => v if v != null }
         }
       }
     }
 
-    x-amazon-apigateway-gateway-responses = {
-      for key, resp in local.gateway_responses_map : key => {
-        statusCode        = resp.status_code
-        responseTemplates = resp.templates
-      }
-    }
+    x-amazon-apigateway-gateway-responses = var.responses
   })
+
+  lifecycle {
+    precondition {
+      condition     = var.openapi_json != null || length(var.integrations) > 0
+      error_message = "Either 'openapi_json' or 'integrations' must be provided."
+    }
+    create_before_destroy = true
+  }
+
 }
 
 resource "aws_api_gateway_deployment" "this" {
@@ -76,5 +70,26 @@ resource "aws_api_gateway_stage" "this" {
       destination_arn = var.create_cw_log_group ? aws_cloudwatch_log_group.access_logs[0].arn : var.cw_log_group_arn
       format          = jsonencode(var.cw_logs_format)
     }
+  }
+
+  cache_cluster_enabled = var.stage_cache_enabled
+  xray_tracing_enabled  = var.stage_xray_tracing_enabled
+}
+
+resource "aws_api_gateway_method_settings" "this" {
+  for_each = var.stage_method_settings
+
+  rest_api_id = aws_api_gateway_rest_api.this.id
+  stage_name  = aws_api_gateway_stage.this.stage_name
+  method_path = each.value["method_path"]
+
+  settings {
+    caching_enabled        = each.value["caching_enabled"]
+    cache_data_encrypted   = each.value["cache_data_encrypted"]
+    metrics_enabled        = each.value["metrics_enabled"]
+    logging_level          = each.value["logging_level"]
+    data_trace_enabled     = each.value["data_trace_enabled"]
+    throttling_burst_limit = each.value["throttling_burst_limit"]
+    throttling_rate_limit  = each.value["throttling_rate_limit"]
   }
 }

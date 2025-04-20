@@ -11,40 +11,148 @@ variable "api_endpoint_type" {
   default = "REGIONAL"
 }
 
-variable "paths" {
-  type = list(object({
-    path               = string
-    http_method        = optional(string)
-    integration_uri    = string
-    integration_type   = optional(string)
-    integration_method = optional(string)
-    payload_version    = optional(string)
-  }))
+variable "openapi_json" {
+  type    = string
+  default = null
 }
 
-variable "gateway_responses" {
-  type = list(object({
-    key         = string
-    status_code = string
-    templates   = map(string)
-  }))
+# source: https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-swagger-extensions-integration.html
+variable "integrations" {
+  type = map(map(object({
+    uri                  = string
+    type                 = optional(string, "AWS_PROXY")
+    httpMethod           = optional(string, "POST") # integration method. For Lambda function invocations, the value must be POST.
+    payloadFormatVersion = optional(string, "2.0")
+    requestParameters    = optional(map(string))
+    requestTemplates     = optional(map(string))
+    responses = optional(map(object({
+      statusCode        = string
+      responseTemplates = optional(map(any))
+      methodResponseContent = optional(map(object({
+        schema = object({
+          type       = string
+          properties = optional(any)
+        })
+      })))
+    })))
 
-  default = [
-    {
-      key         = "DEFAULT_4XX"
-      status_code = "403"
-      templates = {
+    cacheKeyParameters  = optional(list(string))
+    cacheNamespace      = optional(string)
+    connectionId        = optional(string)
+    connectionType      = optional(string)
+    credentials         = optional(string)
+    contentHandling     = optional(string)
+    integrationSubtype  = optional(string)
+    passthroughBehavior = optional(string)
+    timeoutInMillis     = optional(number)
+    tlsConfig = optional(object({
+      insecureSkipVerification = optional(bool, true)
+      serverNameToVerify       = optional(string)
+    }))
+  })))
+
+  description = "API Gateway integration OpenAPI object. Example: {path: {http_method: {<property_name>: <property_value>}}}"
+  default     = {}
+
+  validation {
+    condition = alltrue([
+      for p, methods in var.integrations : alltrue([
+        for _, params in methods : contains(["VPC_LINK", "INTERNET"], params["connectionType"]) if can(index(params, "connectionType"))
+      ])
+    ])
+    error_message = "Bad value 'connectionType'"
+  }
+
+  validation {
+    condition = alltrue([
+      for p, methods in var.integrations : alltrue([
+        for _, params in methods : contains(["CONVERT_TO_TEXT", "CONVERT_TO_BINARY"], params["contentHandling"]) if can(index(params, "contentHandling"))
+      ])
+    ])
+    error_message = "Bad value 'contentHandling'"
+  }
+
+  validation {
+    condition = alltrue([
+      for p, methods in var.integrations : alltrue([
+        for _, params in methods : contains(["POST", "GET", "PUT", "DELETE", "HEAD", "OPTIONS", "PATCH"], upper(params["httpMethod"])) if can(index(params, "httpMethod"))
+      ])
+    ])
+    error_message = "Bad value 'httpMethod'"
+  }
+
+  validation {
+    condition = alltrue([
+      for p, methods in var.integrations : alltrue([
+        for _, params in methods : contains(["1.0", "2.0"], params["payloadFormatVersion"]) if can(index(params, "payloadFormatVersion"))
+      ])
+    ])
+    error_message = "Bad value 'payloadFormatVersion'"
+  }
+
+  validation {
+    condition = alltrue([
+      for p, methods in var.integrations : alltrue([
+        for _, params in methods : (50 < params["timeoutInMillis"] && params["timeoutInMillis"] < 29000) if can(index(params, "timeoutInMillis"))
+      ])
+    ])
+    error_message = "Bad value 'timeoutInMillis'"
+  }
+
+  validation {
+    condition = alltrue([
+      for p, methods in var.integrations : alltrue([
+        for _, params in methods : contains(["AWS_PROXY", "AWS", "HTTP", "HTTP_PROXY", "MOCK"], params["type"]) if can(index(params, "type"))
+      ])
+    ])
+    error_message = "Bad value 'type'"
+  }
+
+}
+
+variable "responses" {
+  type = map(object({
+    statusCode        = string
+    responseTemplates = map(string)
+  }))
+  default = {
+    "DEFAULT_4XX" = {
+      statusCode = "403"
+      responseTemplates = {
         "application/json" = "{\"message\": \"Access denied\"}"
       }
     },
-    {
-      key         = "MISSING_AUTHENTICATION_TOKEN"
-      status_code = "404"
-      templates = {
+    "MISSING_AUTHENTICATION_TOKEN" = {
+      statusCode = "404"
+      responseTemplates = {
         "application/json" = "{\"message\": \"Not found\"}"
       }
     }
-  ]
+  }
+}
+
+variable "stage_method_settings" {
+  type = map(object({
+    caching_enabled      = optional(bool, false)
+    cache_data_encrypted = optional(bool, true)
+    metrics_enabled      = optional(bool, false)
+    logging_level        = optional(string, "OFF")
+    method_path          = optional(string, "*/*")
+    data_trace_enabled   = optional(bool, false)
+    throttling_burst     = optional(number, -1)
+    throttling_rate      = optional(number, -1)
+  }))
+  default = {}
+}
+
+variable "stage_cache_enabled" {
+  type    = bool
+  default = false
+}
+
+variable "stage_xray_tracing_enabled" {
+  type    = bool
+  default = false
 }
 
 #-------------------------------------#

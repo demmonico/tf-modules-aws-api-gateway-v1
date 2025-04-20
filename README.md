@@ -8,11 +8,13 @@ Bootstraps a new Terraform module repo.
 
 ## Usage
 
+Lambda integration example:
+
 ```terraform
 #...
 
 module "apig" {
-  source = "git::https://github.com/demmonico/tf-modules-aws-api-gateway-v1.git"
+  source = "git::https://github.com/demmonico/tf-modules-aws-api-gateway-v1.git?ref=2.0.0"
 
   api_name   = local.lambda_name
   stage_name = local.env
@@ -37,6 +39,140 @@ module "apig" {
 }
 
 #...
+```
+
+SQS integration example:
+
+```hcl
+# using integrations property (less verbose)
+module "api_gateway" {
+  source = "git::https://github.com/demmonico/tf-modules-aws-api-gateway-v1.git?ref=2.0.0"
+
+  api_name = "my_api"
+  stage_name = "staging"
+
+  integrations = {
+    "/example" = {
+      "POST" = {
+        uri         = "arn:aws:apigateway:${var.region}:sqs:path/${data.aws_caller_identity.current.account_id}/<YOUR_AWS_SQS_QUEUE_NAME>"
+        type        = "AWS"
+        credentials = "<YOUR_AWS_IAM_ROLE_ID>"
+        "requestParameters" : {
+          "integration.request.header.Content-Type" = "'application/x-www-form-urlencoded'",
+        }
+        requestTemplates = {
+          "application/json" = "Action=SendMessage&MessageBody=$input.body",
+        }
+        responses = {
+          "default" = {
+            statusCode = "200"
+            responseTemplates = {
+              "application/json" = {
+                "message": "$input.path('$')"
+              }
+            }
+            methodResponseContent = {
+              "application/json" = {
+                schema = {
+                  type = "object"
+                  properties = {
+                    message = {
+                      type = "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+# using openapi_json property (more verbose, more control)
+module "api_gateway" {
+  source = "git::https://github.com/demmonico/tf-modules-aws-api-gateway-v1.git?ref=2.0.0"
+
+  api_name   = "my_api"
+  stage_name = "staging"
+
+  openapi_json = jsonencode({
+    info = {
+      title   = "my_api"
+      version = "1.0"
+    }
+    openapi = "3.0.1"
+    paths = {
+      "/example" = {
+        post = {
+          responses = {
+            "200" = {
+              content = {
+                "application/json" = {
+                  schema = {
+                    properties = {
+                      message = {
+                        type = "string"
+                      }
+                    }
+                    type = "object"
+                  }
+                }
+              }
+              description = "default"
+            }
+          }
+          x-amazon-apigateway-integration = {
+            credentials          = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/<YOUR_AWS_IAM_ROLE_ID>"
+            httpMethod           = "POST"
+            payloadFormatVersion = "2.0"
+            requestParameters = {
+              "integration.request.header.Content-Type" = "'application/x-www-form-urlencoded'"
+            }
+            requestTemplates = {
+              "application/json" = "Action=SendMessage&MessageBody=$input.body"
+            }
+            responses = {
+              default = {
+                responseTemplates = {
+                  "application/json" = {
+                    message = "$input.path('$')"
+                  }
+                }
+                statusCode = "200"
+              }
+            }
+            type = "AWS"
+            uri  = "arn:aws:apigateway:${var.region}:sqs:path/${data.aws_caller_identity.current.account_id}/<YOUR_AWS_SQS_QUEUE_NAME>"
+          }
+        }
+      }
+    }
+    x-amazon-apigateway-gateway-responses = {
+      DEFAULT_4XX = {
+        responseTemplates = {
+          "application/json" = jsonencode(
+            {
+              message = "Access denied"
+            }
+          )
+        }
+        statusCode = "403"
+      }
+      MISSING_AUTHENTICATION_TOKEN = {
+        responseTemplates = {
+          "application/json" = jsonencode(
+            {
+              message = "Not found"
+            }
+          )
+        }
+        statusCode = "404"
+      }
+    }
+  })
+}
 ```
 
 ## Development
@@ -87,6 +223,7 @@ No modules.
 | [aws_api_gateway_base_path_mapping.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/api_gateway_base_path_mapping) | resource |
 | [aws_api_gateway_deployment.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/api_gateway_deployment) | resource |
 | [aws_api_gateway_domain_name.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/api_gateway_domain_name) | resource |
+| [aws_api_gateway_method_settings.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/api_gateway_method_settings) | resource |
 | [aws_api_gateway_rest_api.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/api_gateway_rest_api) | resource |
 | [aws_api_gateway_rest_api_policy.extra](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/api_gateway_rest_api_policy) | resource |
 | [aws_api_gateway_rest_api_policy.internal](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/api_gateway_rest_api_policy) | resource |
@@ -117,10 +254,14 @@ No modules.
 | <a name="input_cw_logs_enabled"></a> [cw\_logs\_enabled](#input\_cw\_logs\_enabled) | n/a | `bool` | `true` | no |
 | <a name="input_cw_logs_format"></a> [cw\_logs\_format](#input\_cw\_logs\_format) | n/a | `map(string)` | <pre>{<br/>  "caller": "$context.identity.caller",<br/>  "errorMessage": "$context.error.messageString",<br/>  "extendedRequestId": "$context.extendedRequestId",<br/>  "httpMethod": "$context.httpMethod",<br/>  "ip": "$context.identity.sourceIp",<br/>  "protocol": "$context.protocol",<br/>  "requestId": "$context.requestId",<br/>  "requestTime": "$context.requestTime",<br/>  "resourcePath": "$context.resourcePath",<br/>  "responseLength": "$context.responseLength",<br/>  "status": "$context.status",<br/>  "user": "$context.identity.user"<br/>}</pre> | no |
 | <a name="input_cw_logs_retention"></a> [cw\_logs\_retention](#input\_cw\_logs\_retention) | CW logs retention in days | `number` | `7` | no |
-| <a name="input_gateway_responses"></a> [gateway\_responses](#input\_gateway\_responses) | n/a | <pre>list(object({<br/>    key         = string<br/>    status_code = string<br/>    templates   = map(string)<br/>  }))</pre> | <pre>[<br/>  {<br/>    "key": "DEFAULT_4XX",<br/>    "status_code": "403",<br/>    "templates": {<br/>      "application/json": "{\"message\": \"Access denied\"}"<br/>    }<br/>  },<br/>  {<br/>    "key": "MISSING_AUTHENTICATION_TOKEN",<br/>    "status_code": "404",<br/>    "templates": {<br/>      "application/json": "{\"message\": \"Not found\"}"<br/>    }<br/>  }<br/>]</pre> | no |
+| <a name="input_integrations"></a> [integrations](#input\_integrations) | API Gateway integration OpenAPI object. Example: {path: {http\_method: {<property\_name>: <property\_value>}}} | <pre>map(map(object({<br/>    uri                  = string<br/>    type                 = optional(string, "AWS_PROXY")<br/>    httpMethod           = optional(string, "POST") # integration method. For Lambda function invocations, the value must be POST.<br/>    payloadFormatVersion = optional(string, "2.0")<br/>    requestParameters    = optional(map(string))<br/>    requestTemplates     = optional(map(string))<br/>    responses = optional(map(object({<br/>      statusCode        = string<br/>      responseTemplates = optional(map(any))<br/>      methodResponseContent = optional(map(object({<br/>        schema = object({<br/>          type       = string<br/>          properties = optional(any)<br/>        })<br/>      })))<br/>    })))<br/><br/>    cacheKeyParameters  = optional(list(string))<br/>    cacheNamespace      = optional(string)<br/>    connectionId        = optional(string)<br/>    connectionType      = optional(string)<br/>    credentials         = optional(string)<br/>    contentHandling     = optional(string)<br/>    integrationSubtype  = optional(string)<br/>    passthroughBehavior = optional(string)<br/>    timeoutInMillis     = optional(number)<br/>    tlsConfig = optional(object({<br/>      insecureSkipVerification = optional(bool, true)<br/>      serverNameToVerify       = optional(string)<br/>    }))<br/>  })))</pre> | `{}` | no |
 | <a name="input_lambda_permission_names_list"></a> [lambda\_permission\_names\_list](#input\_lambda\_permission\_names\_list) | n/a | `list(string)` | `[]` | no |
-| <a name="input_paths"></a> [paths](#input\_paths) | n/a | <pre>list(object({<br/>    path               = string<br/>    http_method        = optional(string)<br/>    integration_uri    = string<br/>    integration_type   = optional(string)<br/>    integration_method = optional(string)<br/>    payload_version    = optional(string)<br/>  }))</pre> | n/a | yes |
+| <a name="input_openapi_json"></a> [openapi\_json](#input\_openapi\_json) | n/a | `string` | `null` | no |
+| <a name="input_responses"></a> [responses](#input\_responses) | n/a | <pre>map(object({<br/>    statusCode        = string<br/>    responseTemplates = map(string)<br/>  }))</pre> | <pre>{<br/>  "DEFAULT_4XX": {<br/>    "responseTemplates": {<br/>      "application/json": "{\"message\": \"Access denied\"}"<br/>    },<br/>    "statusCode": "403"<br/>  },<br/>  "MISSING_AUTHENTICATION_TOKEN": {<br/>    "responseTemplates": {<br/>      "application/json": "{\"message\": \"Not found\"}"<br/>    },<br/>    "statusCode": "404"<br/>  }<br/>}</pre> | no |
+| <a name="input_stage_cache_enabled"></a> [stage\_cache\_enabled](#input\_stage\_cache\_enabled) | n/a | `bool` | `false` | no |
+| <a name="input_stage_method_settings"></a> [stage\_method\_settings](#input\_stage\_method\_settings) | n/a | <pre>map(object({<br/>    caching_enabled      = optional(bool, false)<br/>    cache_data_encrypted = optional(bool, true)<br/>    metrics_enabled      = optional(bool, false)<br/>    logging_level        = optional(string, "OFF")<br/>    method_path          = optional(string, "*/*")<br/>    data_trace_enabled   = optional(bool, false)<br/>    throttling_burst     = optional(number, -1)<br/>    throttling_rate      = optional(number, -1)<br/>  }))</pre> | `{}` | no |
 | <a name="input_stage_name"></a> [stage\_name](#input\_stage\_name) | n/a | `string` | n/a | yes |
+| <a name="input_stage_xray_tracing_enabled"></a> [stage\_xray\_tracing\_enabled](#input\_stage\_xray\_tracing\_enabled) | n/a | `bool` | `false` | no |
 | <a name="input_whitelist_ip_cidrs"></a> [whitelist\_ip\_cidrs](#input\_whitelist\_ip\_cidrs) | n/a | `list(string)` | `[]` | no |
 
 ## Outputs
