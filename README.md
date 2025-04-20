@@ -10,7 +10,7 @@ Bootstraps a new Terraform module repo.
 
 Lambda integration example:
 
-```terraform
+```hcl
 #...
 
 module "apig" {
