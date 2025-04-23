@@ -11,6 +11,8 @@ resource "aws_api_gateway_domain_name" "this" {
   endpoint_configuration {
     types = [var.custom_domain_endpoint_type]
   }
+
+  tags = local.tags
 }
 
 resource "aws_route53_record" "this" {

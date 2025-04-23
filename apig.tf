@@ -38,6 +38,7 @@ resource "aws_api_gateway_rest_api" "this" {
     create_before_destroy = true
   }
 
+  tags = merge(local.tags, var.apig_tags)
 }
 
 resource "aws_api_gateway_deployment" "this" {
@@ -74,6 +75,8 @@ resource "aws_api_gateway_stage" "this" {
 
   cache_cluster_enabled = var.stage_cache_enabled
   xray_tracing_enabled  = var.stage_xray_tracing_enabled
+
+  tags = merge(local.tags, var.stage_tags)
 }
 
 resource "aws_api_gateway_method_settings" "this" {

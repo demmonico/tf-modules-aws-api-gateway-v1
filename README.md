@@ -239,6 +239,7 @@ No modules.
 |------|-------------|------|---------|:--------:|
 | <a name="input_api_endpoint_type"></a> [api\_endpoint\_type](#input\_api\_endpoint\_type) | n/a | `string` | `"REGIONAL"` | no |
 | <a name="input_api_name"></a> [api\_name](#input\_api\_name) | n/a | `string` | n/a | yes |
+| <a name="input_apig_tags"></a> [apig\_tags](#input\_apig\_tags) | Tags to be applied to the API Gateway resource only | `map(string)` | `{}` | no |
 | <a name="input_attach_iam_policies"></a> [attach\_iam\_policies](#input\_attach\_iam\_policies) | List of extra IAM policies to be attached to the role | `list(string)` | `[]` | no |
 | <a name="input_create_custom_domain"></a> [create\_custom\_domain](#input\_create\_custom\_domain) | n/a | `bool` | `false` | no |
 | <a name="input_create_cw_log_group"></a> [create\_cw\_log\_group](#input\_create\_cw\_log\_group) | n/a | `bool` | `true` | no |
@@ -261,7 +262,9 @@ No modules.
 | <a name="input_stage_cache_enabled"></a> [stage\_cache\_enabled](#input\_stage\_cache\_enabled) | n/a | `bool` | `false` | no |
 | <a name="input_stage_method_settings"></a> [stage\_method\_settings](#input\_stage\_method\_settings) | n/a | <pre>map(object({<br/>    caching_enabled      = optional(bool, false)<br/>    cache_data_encrypted = optional(bool, true)<br/>    metrics_enabled      = optional(bool, false)<br/>    logging_level        = optional(string, "OFF")<br/>    method_path          = optional(string, "*/*")<br/>    data_trace_enabled   = optional(bool, false)<br/>    throttling_burst     = optional(number, -1)<br/>    throttling_rate      = optional(number, -1)<br/>  }))</pre> | `{}` | no |
 | <a name="input_stage_name"></a> [stage\_name](#input\_stage\_name) | n/a | `string` | n/a | yes |
+| <a name="input_stage_tags"></a> [stage\_tags](#input\_stage\_tags) | Tags to be applied to the API Gateway stage resource only | `map(string)` | `{}` | no |
 | <a name="input_stage_xray_tracing_enabled"></a> [stage\_xray\_tracing\_enabled](#input\_stage\_xray\_tracing\_enabled) | n/a | `bool` | `false` | no |
+| <a name="input_tags"></a> [tags](#input\_tags) | Tags to be applied to all resources | `map(string)` | `{}` | no |
 | <a name="input_whitelist_ip_cidrs"></a> [whitelist\_ip\_cidrs](#input\_whitelist\_ip\_cidrs) | n/a | `list(string)` | `[]` | no |
 
 ## Outputs

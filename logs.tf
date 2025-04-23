@@ -10,4 +10,6 @@ resource "aws_cloudwatch_log_group" "access_logs" {
 
   name              = local.log_group_name
   retention_in_days = var.cw_logs_retention
+
+  tags = local.tags
 }

@@ -265,3 +265,24 @@ variable "cw_logs_format" {
     errorMessage      = "$context.error.messageString"
   }
 }
+
+#-------------------------------------#
+# Tags
+
+variable "tags" {
+  type        = map(string)
+  default     = {}
+  description = "Tags to be applied to all resources"
+}
+
+variable "apig_tags" {
+  type        = map(string)
+  default     = {}
+  description = "Tags to be applied to the API Gateway resource only"
+}
+
+variable "stage_tags" {
+  type        = map(string)
+  default     = {}
+  description = "Tags to be applied to the API Gateway stage resource only"
+}
