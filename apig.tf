@@ -18,7 +18,7 @@ resource "aws_api_gateway_rest_api" "this" {
     paths = {
       for path, methods in var.integrations : path => {
         for httpMethod, params in methods : lower(httpMethod) => {
-          responses = { for k, v in(can(params["responses"]) ? params["responses"] : {}) : v["statusCode"] => {
+          responses = { for k, v in coalesce(params["responses"], {}) : v["statusCode"] => {
             content     = v["methodResponseContent"]
             description = k
           } if v["methodResponseContent"] != null }
