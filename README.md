@@ -276,7 +276,7 @@ No modules.
 | <a name="output_apig_id"></a> [apig\_id](#output\_apig\_id) | n/a |
 | <a name="output_cw_log_group_name"></a> [cw\_log\_group\_name](#output\_cw\_log\_group\_name) | n/a |
 | <a name="output_deployment_id"></a> [deployment\_id](#output\_deployment\_id) | n/a |
-| <a name="output_deployment_invoke_url"></a> [deployment\_invoke\_url](#output\_deployment\_invoke\_url) | n/a |
 | <a name="output_iam_lambda_permissions"></a> [iam\_lambda\_permissions](#output\_iam\_lambda\_permissions) | n/a |
 | <a name="output_stage_execution_arn"></a> [stage\_execution\_arn](#output\_stage\_execution\_arn) | n/a |
+| <a name="output_stage_invoke_url"></a> [stage\_invoke\_url](#output\_stage\_invoke\_url) | n/a |
 <!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
