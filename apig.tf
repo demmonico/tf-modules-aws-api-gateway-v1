@@ -32,7 +32,7 @@ resource "aws_api_gateway_rest_api" "this" {
 
   lifecycle {
     precondition {
-      condition     = var.openapi_json != null || length(var.integrations) > 0
+      condition     = !(var.openapi_json != null && length(var.integrations) > 0)
       error_message = "Either 'openapi_json' or 'integrations' must be provided."
     }
     create_before_destroy = true
