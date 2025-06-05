@@ -19,9 +19,9 @@ variable "openapi_json" {
 # source: https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-swagger-extensions-integration.html
 variable "integrations" {
   type = map(map(object({
-    uri                  = string
+    uri                  = optional(string) # Required for all types, except MOCK
     type                 = optional(string, "AWS_PROXY")
-    httpMethod           = optional(string, "POST") # integration method. For Lambda function invocations, the value must be POST.
+    httpMethod           = optional(string, "POST") # integration method. For Lambda function invocations, the value must be POST
     payloadFormatVersion = optional(string, "2.0")
     requestParameters    = optional(map(string))
     requestTemplates     = optional(map(string))
@@ -54,10 +54,12 @@ variable "integrations" {
   description = "API Gateway integration OpenAPI object. Example: {path: {http_method: {<property_name>: <property_value>}}}"
   default     = {}
 
+  # Params validations
+
   validation {
     condition = alltrue([
       for p, methods in var.integrations : alltrue([
-        for _, params in methods : contains(["VPC_LINK", "INTERNET"], params["connectionType"]) if can(index(params, "connectionType"))
+        for _, params in methods : contains(["VPC_LINK", "INTERNET"], params["connectionType"]) if params["connectionType"] != null
       ])
     ])
     error_message = "Bad value 'connectionType'"
@@ -66,7 +68,7 @@ variable "integrations" {
   validation {
     condition = alltrue([
       for p, methods in var.integrations : alltrue([
-        for _, params in methods : contains(["CONVERT_TO_TEXT", "CONVERT_TO_BINARY"], params["contentHandling"]) if can(index(params, "contentHandling"))
+        for _, params in methods : contains(["CONVERT_TO_TEXT", "CONVERT_TO_BINARY"], params["contentHandling"]) if params["contentHandling"] != null
       ])
     ])
     error_message = "Bad value 'contentHandling'"
@@ -75,7 +77,7 @@ variable "integrations" {
   validation {
     condition = alltrue([
       for p, methods in var.integrations : alltrue([
-        for _, params in methods : contains(["POST", "GET", "PUT", "DELETE", "HEAD", "OPTIONS", "PATCH"], upper(params["httpMethod"])) if can(index(params, "httpMethod"))
+        for _, params in methods : contains(["POST", "GET", "PUT", "DELETE", "HEAD", "OPTIONS", "PATCH"], upper(params["httpMethod"]))
       ])
     ])
     error_message = "Bad value 'httpMethod'"
@@ -84,7 +86,7 @@ variable "integrations" {
   validation {
     condition = alltrue([
       for p, methods in var.integrations : alltrue([
-        for _, params in methods : contains(["1.0", "2.0"], params["payloadFormatVersion"]) if can(index(params, "payloadFormatVersion"))
+        for _, params in methods : contains(["1.0", "2.0"], params["payloadFormatVersion"])
       ])
     ])
     error_message = "Bad value 'payloadFormatVersion'"
@@ -93,7 +95,7 @@ variable "integrations" {
   validation {
     condition = alltrue([
       for p, methods in var.integrations : alltrue([
-        for _, params in methods : (50 < params["timeoutInMillis"] && params["timeoutInMillis"] < 29000) if can(index(params, "timeoutInMillis"))
+        for _, params in methods : (50 < params["timeoutInMillis"] && params["timeoutInMillis"] < 29000) if params["timeoutInMillis"] != null
       ])
     ])
     error_message = "Bad value 'timeoutInMillis'"
@@ -102,12 +104,36 @@ variable "integrations" {
   validation {
     condition = alltrue([
       for p, methods in var.integrations : alltrue([
-        for _, params in methods : contains(["AWS_PROXY", "AWS", "HTTP", "HTTP_PROXY", "MOCK"], params["type"]) if can(index(params, "type"))
+        for _, params in methods : contains(["AWS_PROXY", "AWS", "HTTP", "HTTP_PROXY", "MOCK"], params["type"])
       ])
     ])
     error_message = "Bad value 'type'"
   }
 
+  validation {
+    condition = alltrue([
+      for p, methods in var.integrations : alltrue([
+        for _, params in methods : (params["uri"] != null) if upper(params["type"]) != "MOCK"
+      ])
+    ])
+    error_message = "Param 'uri' is required for all types, except MOCK"
+  }
+
+  # Params type-specific validations
+
+  validation {
+    condition = alltrue([
+      for p, methods in var.integrations : alltrue([
+        for _, params in methods : (params["httpMethod"] == "POST") if upper(params["type"]) == "AWS_PROXY"
+      ])
+    ])
+    error_message = "For Lambda function invocations: 'httpMethod' must be 'POST', 'uri' must be provided and 'type' must be 'AWS_PROXY'"
+  }
+}
+
+variable "add_integration_health_route" {
+  type    = bool
+  default = false
 }
 
 variable "responses" {
@@ -153,6 +179,11 @@ variable "stage_cache_enabled" {
 variable "stage_xray_tracing_enabled" {
   type    = bool
   default = false
+}
+
+variable "stage_variables" {
+  type    = map(string)
+  default = {}
 }
 
 #-------------------------------------#

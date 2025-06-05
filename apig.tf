@@ -1,6 +1,52 @@
 #-------------------------------------#
 # API Gateway
 
+locals {
+  integrations = merge(
+    var.integrations,
+    var.add_integration_health_route ? {
+      "/health" = {
+        GET = {
+          type = "MOCK"
+          requestTemplates = {
+            "application/json" = "{\"statusCode\": 200}",
+          }
+          responses = {
+            "default" = {
+              statusCode = "200"
+              responseTemplates = {
+                "application/json" = <<EOF
+#set($timestamp = $context.requestTimeEpoch)
+{
+  "status": "ok",
+  "api_name": "$stageVariables.api_name",
+  "api_id": "$stageVariables.api_id",
+  "stage_name": "$stageVariables.stage_name",
+  "deployment_id": "$stageVariables.deployment_id",
+  "timestamp": "$timestamp"
+}
+EOF
+              }
+              methodResponseContent = {
+                "application/json" = {
+                  schema = {
+                    type = "object"
+                    properties = {
+                      message = {
+                        type = "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    } : {}
+  )
+}
+
 resource "aws_api_gateway_rest_api" "this" {
   name = var.api_name
 
@@ -16,7 +62,7 @@ resource "aws_api_gateway_rest_api" "this" {
     }
 
     paths = {
-      for path, methods in var.integrations : path => {
+      for path, methods in local.integrations : path => {
         for httpMethod, params in methods : lower(httpMethod) => {
           responses = { for k, v in coalesce(params["responses"], {}) : v["statusCode"] => {
             content     = v["methodResponseContent"]
@@ -75,6 +121,16 @@ resource "aws_api_gateway_stage" "this" {
 
   cache_cluster_enabled = var.stage_cache_enabled
   xray_tracing_enabled  = var.stage_xray_tracing_enabled
+
+  variables = merge(
+    {
+      api_name      = var.api_name
+      api_id        = aws_api_gateway_rest_api.this.id
+      stage_name    = var.stage_name
+      deployment_id = aws_api_gateway_deployment.this.id
+    },
+    var.stage_variables
+  )
 
   tags = merge(local.tags, var.stage_tags)
 }
