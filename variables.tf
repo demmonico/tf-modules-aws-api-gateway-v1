@@ -199,6 +199,12 @@ variable "lambda_permission_names_list" {
   default = []
 }
 
+variable "use_strict_lambda_permissions" {
+  type        = bool
+  description = "Whether to use strict lambda permissions or not. If true, the only related stage will be able to invoke lambda function. Otherwise, ANY could, which is needed for testing using Test button in AWS Console (it uses 'test-invoke-stage' stage)."
+  default     = true
+}
+
 variable "create_whitelist_api_resource_policy" {
   type    = bool
   default = false

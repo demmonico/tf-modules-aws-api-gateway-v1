@@ -13,7 +13,7 @@ resource "aws_lambda_permission" "lambda_perm" {
   function_name = each.value
   principal     = "apigateway.amazonaws.com"
 
-  source_arn = "${aws_api_gateway_rest_api.this.execution_arn}/${var.stage_name}/*"
+  source_arn = "${aws_api_gateway_rest_api.this.execution_arn}/${var.use_strict_lambda_permissions ? var.stage_name : "*"}/*"
 }
 
 data "aws_iam_policy_document" "internal" {

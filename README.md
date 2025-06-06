@@ -349,6 +349,7 @@ No modules.
 | <a name="input_stage_variables"></a> [stage\_variables](#input\_stage\_variables) | n/a | `map(string)` | `{}` | no |
 | <a name="input_stage_xray_tracing_enabled"></a> [stage\_xray\_tracing\_enabled](#input\_stage\_xray\_tracing\_enabled) | n/a | `bool` | `false` | no |
 | <a name="input_tags"></a> [tags](#input\_tags) | Tags to be applied to all resources | `map(string)` | `{}` | no |
+| <a name="input_use_strict_lambda_permissions"></a> [use\_strict\_lambda\_permissions](#input\_use\_strict\_lambda\_permissions) | Whether to use strict lambda permissions or not. If true, the only related stage will be able to invoke lambda function. Otherwise, ANY could, which is needed for testing using Test button in AWS Console (it uses 'test-invoke-stage' stage). | `bool` | `true` | no |
 | <a name="input_whitelist_ip_cidrs"></a> [whitelist\_ip\_cidrs](#input\_whitelist\_ip\_cidrs) | n/a | `list(string)` | `[]` | no |
 
 ## Outputs
